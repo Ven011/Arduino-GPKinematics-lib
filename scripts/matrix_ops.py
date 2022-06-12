@@ -33,8 +33,8 @@ class MOPS():
         self.V_X =      np.zeros((3, 1))   
         
         self.LZ =       200  # length from z axis endpoint to center point
-        self.LY =       100
-        self.LX =       100
+        self.LY =       200
+        self.LX =       200
         
         # used to draw axis lines
         self.projected_points = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
@@ -93,7 +93,7 @@ class MOPS():
         self.connect_points(0, 7, self.projected_points, scrn, (255, 0, 0)) #           x
         
         # draw workspace plane
-        pyg_gfx.filled_polygon(scrn, [(x, y) for x, y in self.ws_points], (255, 255, 255, 50))
+        pyg_gfx.filled_polygon(scrn, [(x, y) for x, y in self.ws_points], (0, 0, 0, 50))
     
     def get_z_endpoint(self, width, height):
         self.calc_DVs()
