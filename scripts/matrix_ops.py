@@ -126,6 +126,88 @@ class MOPS():
         self.V_X[1, 0] = self.LX * sin(self.sigma)
         self.V_X[2, 0] = self.LX * -sin(self.alpha)
         
+class Grid():
+    def __init__(self, grid_rows, grid_columns):
+        # grid attributes
+        self._x = 0
+        self._y = 0
+        self._width = 0
+        self._height = 0
+        
+        # grid variables
+        self._rows = grid_rows
+        self._columns = grid_columns
+        
+    def get_map(self):
+        """
+        Calculates and returns a grid net/map of using the desired grid attributes
+
+        Returns:
+            np.array: (rows + 1, columns + 1, 2) shaped grid map with x and y points of each grid intersection point
+        """
+        
+        # create grid map template
+        grid_coordinates = np.zeros((self._rows + 1, self._columns + 1, 2))
+        
+        # calculate grid box width and height - will be used to determine grid "net" coordinates
+        grid_box_width = (self._width / self._columns)
+        grid_box_height = (self._height / self._rows)
+        
+        # get grid net x and y coordinates
+        x_coords = list(np.arange(self._x, (self._x + self._width + 1), grid_box_width))    # (+1) ensures we are including the x + width point as a possible coordinate point
+        y_coords = list(np.arange(self._y, (self._y + self._height + 1), grid_box_height))
+        
+        # fill the grid coordinate matrix with the points
+        for row in range(grid_coordinates.shape[0]):
+            for col in range(grid_coordinates.shape[1]):
+                grid_coordinates[row, col, 0] = x_coords[col]
+                grid_coordinates[row, col, 1] = y_coords[row]
+                
+        # round each coordinate float point to an integer
+        grid_coordinates = grid_coordinates.astype(int)
+        
+        return grid_coordinates
+    
+    def get_span(self, row_span = [0, 0], col_span = [0, 0]):
+        """
+        Returns the x, y coordinate, width, and height of the entered grid span
+
+        Args:
+            row_span (list, optional): first and last row of the span. Defaults to [0, 0].
+            col_span (list, optional): first and last column of the span. Defaults to [0, 0].
+
+        Returns:
+            list: the span's top left (x, y), width and height
+        """
+        
+        # calculate the current map
+        map = self.get_map()
+        
+        # grab the x and y coordinates of the top left point of the spans
+        topLeftx = map[row_span[0], col_span[0], 0]
+        topLefty = map[row_span[0], col_span[0], 1]
+        
+        # calculate the width and height of the spans. 
+        width = map[row_span[1], col_span[1] + 1, 0] - topLeftx
+        height = map[row_span[1] + 1, col_span[1], 1] - topLefty
+        
+        return [topLeftx, topLefty, width, height]
+        
+    
+    def update_attributes(self, grid_dimensions):
+        """
+        Updates grid attributes
+
+        Args:
+            grid_dimensions (list): [topleft_X, topleft_Y, width, height]
+        """
+        self._x, self._y, self._width, self._height = grid_dimensions
+    
+    
+
+    
+    
+        
         
         
             

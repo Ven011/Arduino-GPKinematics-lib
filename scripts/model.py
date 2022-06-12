@@ -80,24 +80,14 @@ if __name__ == "__main__":
     # initialize menus
     tool_menu = Menu(screen, ORANGE, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Tools")
+    # grid nesting example
+    # tools_innermenu = Menu(screen, (255, 255, 255), 10, 8, menu_title="", title_row_span=[1, 3], title_col_span=[1, 3])
     settings_menu = Menu(screen, MAX_RED, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Settings")
     comms_menu = Menu(screen, PRUSSIAN_BLUE, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Comms")
     joint_viz_menu = Menu(screen, MAX_YELLOW_RED, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Joint Viz")
-    
-    #     # # toolkit menu
-    #     # pyg.draw.rect(scrn, (51, 49, 56), (0, 0, width/6, height/2))
-    #     # # joint viz menu
-    #     # pyg.draw.rect(scrn, (81, 80, 82), (0, height/2, width/6, height/2))
-    #     # # GPK setting menu
-    #     # pyg.draw.rect(scrn, (255, 255, 250), (width - (width/6), 0, width/6, height/2))
-    #     # # Ardu comms menu
-    #     # pyg.draw.rect(scrn, (255, 49, 46), (width - (width/6), height/2, width/6, height/2))
-    #     # # model viz menu
-    #     # pyg.draw.rect(scrn, (0, 1, 3), (width/6, 0, width - (width/3), height))
-    #     pyg.draw.rect(self.scrn, self.bg_color, self.dimensions)
 
     while True:
         clock.tick(FPS)
@@ -127,6 +117,8 @@ if __name__ == "__main__":
         settings_menu.run([winfo.current_w - (winfo.current_w//6), 0, winfo.current_w//6, winfo.current_h//2])
         comms_menu.run([winfo.current_w - (winfo.current_w//6), winfo.current_h//2, winfo.current_w//6, winfo.current_h//2])
         joint_viz_menu.run([0, winfo.current_h/2, winfo.current_w/6, winfo.current_h/2])
+        
+        # tools_innermenu.run(tool_menu.menu_grid.get_span(row_span=[5, 10], col_span=[5, 8])) # simple grid nesting
         
         # update widgets. widgets have to be updated before the pygame display
         pyg_wid.update(events)
