@@ -53,36 +53,35 @@ class MOPS():
         pyg.draw.line(scrn, color, (points[i][0], points[i][1]), (points[j][0], points[j][1]))
         
     def project_workspace(self, points, width, height, scrn):  
-        if self.refresh_workspace():
-            i = 0
-            for point in points:
-                # turn 3D points into 2D points
-                projected3D = np.dot(self.projection_matrix, point.reshape((3, 1)))
-                
-                x = int(projected3D[0][0])
-                y = int(projected3D[1][0])
-                
-                self.projected_points[i] = [x, y]
-                self.projected_points[i + 4] = [(width/2) - (x - (width/2)), (height/2) - (y - (height/2))]
-                i += 1
-                
-                    # calculate workspace plane points. Used the concepts of parallel lines and distance
-            # x,y point
-            self.ws_points[0][0] = self.projected_points[2][0] - (self.projected_points[0][0] - self.projected_points[3][0])
-            self.ws_points[0][1] = self.projected_points[2][1] - (self.projected_points[0][1] - self.projected_points[3][1])
-            # -x,y point
-            self.ws_points[2][0] = self.projected_points[6][0] - (self.projected_points[0][0] - self.projected_points[7][0])
-            self.ws_points[2][1] = self.projected_points[6][1] - (self.projected_points[0][1] - self.projected_points[7][1])
-            # -x,-y
-            self.ws_points[1][0] = self.projected_points[3][0] + (self.projected_points[0][0] - self.projected_points[2][0])
-            self.ws_points[1][1] = self.projected_points[3][1] + (self.projected_points[0][1] - self.projected_points[2][1])
-            # x,-y
-            self.ws_points[3][0] = self.projected_points[7][0] + (self.projected_points[0][0] - self.projected_points[6][0])
-            self.ws_points[3][1] = self.projected_points[7][1] + (self.projected_points[0][1] - self.projected_points[6][1])
+        i = 0
+        for point in points:
+            # turn 3D points into 2D points
+            projected3D = np.dot(self.projection_matrix, point.reshape((3, 1)))
             
-            self.prev_theta = self.theta
-            self.prev_alpha = self.alpha
-            self.prev_sigma = self.sigma
+            x = int(projected3D[0][0])
+            y = int(projected3D[1][0])
+            
+            self.projected_points[i] = [x, y]
+            self.projected_points[i + 4] = [(width/2) - (x - (width/2)), (height/2) - (y - (height/2))]
+            i += 1
+            
+                # calculate workspace plane points. Used the concepts of parallel lines and distance
+        # x,y point
+        self.ws_points[0][0] = self.projected_points[2][0] - (self.projected_points[0][0] - self.projected_points[3][0])
+        self.ws_points[0][1] = self.projected_points[2][1] - (self.projected_points[0][1] - self.projected_points[3][1])
+        # -x,y point
+        self.ws_points[2][0] = self.projected_points[6][0] - (self.projected_points[0][0] - self.projected_points[7][0])
+        self.ws_points[2][1] = self.projected_points[6][1] - (self.projected_points[0][1] - self.projected_points[7][1])
+        # -x,-y
+        self.ws_points[1][0] = self.projected_points[3][0] + (self.projected_points[0][0] - self.projected_points[2][0])
+        self.ws_points[1][1] = self.projected_points[3][1] + (self.projected_points[0][1] - self.projected_points[2][1])
+        # x,-y
+        self.ws_points[3][0] = self.projected_points[7][0] + (self.projected_points[0][0] - self.projected_points[6][0])
+        self.ws_points[3][1] = self.projected_points[7][1] + (self.projected_points[0][1] - self.projected_points[6][1])
+        
+        self.prev_theta = self.theta
+        self.prev_alpha = self.alpha
+        self.prev_sigma = self.sigma
            
         # draw axes lines 
         self.connect_points(0, 1, self.projected_points, scrn, (0, 0, 255)) # draws z axis

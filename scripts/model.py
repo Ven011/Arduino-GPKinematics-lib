@@ -77,6 +77,10 @@ if __name__ == "__main__":
     PRUSSIAN_BLUE = (0, 48, 73)
     
     
+    # create main grid
+    master_menu = Menu(screen, WHITE, grid_columns=40, grid_rows=80,
+                       title_col_span=[15, 24], title_row_span=[1, 3], menu_title="GPK")
+    
     # initialize menus
     tool_menu = Menu(screen, ORANGE, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Tools")
@@ -104,21 +108,27 @@ if __name__ == "__main__":
                 if event.key == pyg.K_ESCAPE:
                     pyg.quit()
                     exit()
-                    
-        # set background color
-        screen.fill(WHITE)
         
         # get latest display information
         winfo = pyg.display.Info()
         
-        # handle menus
-        handle_model_viz(winfo.current_w, winfo.current_h, screen, events)
-        tool_menu.run([0, 0, winfo.current_w//6, winfo.current_h//2])
-        settings_menu.run([winfo.current_w - (winfo.current_w//6), 0, winfo.current_w//6, winfo.current_h//2])
-        comms_menu.run([winfo.current_w - (winfo.current_w//6), winfo.current_h//2, winfo.current_w//6, winfo.current_h//2])
-        joint_viz_menu.run([0, winfo.current_h/2, winfo.current_w/6, winfo.current_h/2])
+        # handle menus - Menus get draw in the order they are run here
+        master_menu.run([0, 0, winfo.current_w, winfo.current_h])
         
-        # tools_innermenu.run(tool_menu.menu_grid.get_span(row_span=[5, 10], col_span=[5, 8])) # simple grid nesting
+        handle_model_viz(winfo.current_w, winfo.current_h, screen, events)
+        
+        tool_menu.run(
+            master_menu.menu_grid.get_span(col_span=[0, 6], row_span=[0, 39])
+        )
+        settings_menu.run(
+            master_menu.menu_grid.get_span(col_span=[33, 39], row_span=[0, 39])
+        )
+        comms_menu.run(
+            master_menu.menu_grid.get_span(col_span=[33, 39], row_span=[39, 79])
+        )
+        joint_viz_menu.run(
+            master_menu.menu_grid.get_span(col_span=[0, 6], row_span=[39, 79])
+        )
         
         # update widgets. widgets have to be updated before the pygame display
         pyg_wid.update(events)

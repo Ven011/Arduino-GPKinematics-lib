@@ -22,7 +22,7 @@ class Menu():
         # menu grid object and variables
         self.menu_grid = Grid(grid_rows, grid_columns)
         
-        self.title = Button(self.scrn, 0, 0, 0, 0, text=self.name, fontSize=25, margin=3, radius=4)
+        self.title = Button(self.scrn, 0, 0, 0, 0, text=self.name, fontSize=25, margin=3, radius=4, inactiveColour = (255, 255, 255))
         self.title._hidden = True
         self.title._disabled = True
    
