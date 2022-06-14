@@ -9,41 +9,35 @@ import pygame_widgets as pyg_wid
 from pygame_widgets.textbox import TextBox
 import numpy as np
 from math import *
-from matrix_ops import MOPS
+from matrix_ops import Coordinate_grid
 from menu_ops import Menu
-
-mops = MOPS()
     
-def handle_model_viz(width, height, scrn, events):
-    # create the workspace axes and plane
-    points = []
-    center_point = np.matrix([width//2, height//2, 0])
-    pyg.draw.circle(scrn, (255, 23, 241), (center_point[0, 0], center_point[0, 1]), 3)
-
-    z_endpoint = mops.get_z_endpoint(width, height)
-    y_endpoint = mops.get_y_endpoint(width, height)
-    x_endpoint = mops.get_x_endpoint(width, height)
+ang = 0
     
-    points.append(center_point)
-    points.append(z_endpoint)
-    points.append(y_endpoint)
-    points.append(x_endpoint)
-    mops.project_workspace(points, width, height, scrn)
+def handle_workspace(ws, center_point ,events, ws2, ws3, ws4):
+    global ang
     
-    for event in events:
-        if event.type == pyg.KEYDOWN:
-            if event.key == pyg.K_UP:
-                mops.theta += 0.01
-            if event.key == pyg.K_DOWN:
-                mops.theta -= 0.01
-            if event.key == pyg.K_LEFT:
-                mops.alpha += 0.01
-            if event.key == pyg.K_RIGHT:
-                mops.alpha -= 0.01
-            if event.key == pyg.K_COMMA:
-                mops.sigma -= 0.01
-            if event.key == pyg.K_PERIOD:
-                mops.sigma += 0.01
+    # run the workspace
+    ws.run(center_point, events)
+    
+    x, y = ws.get_point_at_XYcoord([-(50 * cos(ang)), -(50 * sin(ang))])
+    ws2.run([x, y, 50], events)
+    
+    x, y = ws2.get_point_at_XYcoord([0, 0])
+    ws3.run([x, y, 50], events)
+    
+    x, y = ws3.get_point_at_XYcoord([-(20 * sin(ang)), -(20 * sin(ang))])
+    ws4.run([x, y, 50], events)
+    
+    ang += 0.01
+    
+    pyg.draw.line(ws.scrn, (234, 24, 242), (ws.get_point_at_XYcoord([0, 0])), (ws2.get_point_at_XYcoord([0, 0])), width=5)
+    pyg.draw.line(ws.scrn, (30, 223, 34), (ws2.get_point_at_XYcoord([0, 0])), (ws3.get_point_at_XYcoord([0, 0])), width=5)
+    pyg.draw.line(ws.scrn, (23, 43, 123), (ws3.get_point_at_XYcoord([0, 0])), (ws4.get_point_at_XYcoord([0, 0])), width=5)
+    
+# def handle_join_grid(j0_ws, center_point, events):
+#     j0_ws.run(center_point, events)
+    # pass
 
 if __name__ == "__main__":
     # initialize pygame
@@ -84,14 +78,19 @@ if __name__ == "__main__":
     # initialize menus
     tool_menu = Menu(screen, ORANGE, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Tools")
-    # grid nesting example
-    # tools_innermenu = Menu(screen, (255, 255, 255), 10, 8, menu_title="", title_row_span=[1, 3], title_col_span=[1, 3])
     settings_menu = Menu(screen, MAX_RED, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Settings")
     comms_menu = Menu(screen, PRUSSIAN_BLUE, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Comms")
     joint_viz_menu = Menu(screen, MAX_YELLOW_RED, grid_columns=20, grid_rows=40,
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Joint Viz")
+    
+    # create workspace
+    workspace = Coordinate_grid(screen, pixel_axis_length=400, perceived_axis_length=200, grid_rows=10, grid_columns=10)
+    
+    joint_ws = Coordinate_grid(screen, pixel_axis_length=80, perceived_axis_length=40, grid_rows=4, grid_columns=4)
+    joint_ws2 = Coordinate_grid(screen, pixel_axis_length=80, perceived_axis_length=40, grid_rows=4, grid_columns=4)
+    joint_ws3 = Coordinate_grid(screen, pixel_axis_length=80, perceived_axis_length=40, grid_rows=4, grid_columns=4)
 
     while True:
         clock.tick(FPS)
@@ -115,7 +114,7 @@ if __name__ == "__main__":
         # handle menus - Menus get draw in the order they are run here
         master_menu.run([0, 0, winfo.current_w, winfo.current_h])
         
-        handle_model_viz(winfo.current_w, winfo.current_h, screen, events)
+        handle_workspace(workspace, [winfo.current_w//2, winfo.current_h//2, 1], events, joint_ws, joint_ws2, joint_ws3)
         
         tool_menu.run(
             master_menu.menu_grid.get_span(col_span=[0, 6], row_span=[0, 39])
