@@ -18,22 +18,19 @@ def handle_workspace(ws, center_point ,events, ws2, ws3, ws4):
     global ang
     
     # run the workspace
-    ws.run(center_point, events)
+    ws.run(None, center_point, events)
     
-    x, y = ws.get_point_at_XYcoord([-(50 * cos(ang)), -(50 * sin(ang))])
-    ws2.run([x, y, 50], events)
+    ws2.run(ws, [100, 100, 100], events)
     
-    x, y = ws2.get_point_at_XYcoord([0, 0])
-    ws3.run([x, y, 50], events)
+    ws3.run(ws, [50, 50, 50], events)
     
-    x, y = ws3.get_point_at_XYcoord([-(20 * sin(ang)), -(20 * sin(ang))])
-    ws4.run([x, y, 50], events)
+    ws4.run(ws, [50, 50, -50], events) 
     
     ang += 0.01
     
-    pyg.draw.line(ws.scrn, (234, 24, 242), (ws.get_point_at_XYcoord([0, 0])), (ws2.get_point_at_XYcoord([0, 0])), width=5)
-    pyg.draw.line(ws.scrn, (30, 223, 34), (ws2.get_point_at_XYcoord([0, 0])), (ws3.get_point_at_XYcoord([0, 0])), width=5)
-    pyg.draw.line(ws.scrn, (23, 43, 123), (ws3.get_point_at_XYcoord([0, 0])), (ws4.get_point_at_XYcoord([0, 0])), width=5)
+    pyg.draw.line(ws.scrn, (234, 24, 242), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws2.get_point_at_XYZcoord([0, 0, 0])), width=5)
+    pyg.draw.line(ws.scrn, (30, 223, 34), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws3.get_point_at_XYZcoord([0, 0, 0])), width=5)
+    pyg.draw.line(ws.scrn, (23, 43, 123), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws4.get_point_at_XYZcoord([0, 0, 0])), width=5)
     
 # def handle_join_grid(j0_ws, center_point, events):
 #     j0_ws.run(center_point, events)
@@ -51,7 +48,7 @@ if __name__ == "__main__":
     # setup clock
     clock = pyg.time.Clock()
     # fps
-    FPS = 200
+    FPS = 30
     # active keydown repeat
     pyg.key.set_repeat(10)
     
@@ -117,10 +114,10 @@ if __name__ == "__main__":
         handle_workspace(workspace, [winfo.current_w//2, winfo.current_h//2, 1], events, joint_ws, joint_ws2, joint_ws3)
         
         tool_menu.run(
-            master_menu.menu_grid.get_span(col_span=[0, 6], row_span=[0, 39])
+            master_menu.menu_grid.get_span(col_span=[0, 6], row_span=[0, 38])
         )
         settings_menu.run(
-            master_menu.menu_grid.get_span(col_span=[33, 39], row_span=[0, 39])
+            master_menu.menu_grid.get_span(col_span=[33, 39], row_span=[0, 38])
         )
         comms_menu.run(
             master_menu.menu_grid.get_span(col_span=[33, 39], row_span=[39, 79])
