@@ -81,19 +81,23 @@ class Coordinate_grid():
         # to the x and y coordinate of the mouse cursor / zoom center. As we zoom in, add the slope components to the ws edge points,
         # as we zoom out, subtract the slope components from the ws grid points
         
+        # get mouse x and y
+        mouse_x, mouse_y = pyg.mouse.get_pos() #  self.proj_center_p[0, 0], self.proj_center_p[1, 0] #
+        
         # iterate thought each ws edge point
         for point in range(len(self.axis_points)):
-            if point is not 0 or point is not 4:
-                # get mouse x and y
-                mouse_x, mouse_y = self.proj_center_p[0, 0], self.proj_center_p[1, 0] # pyg.mouse.get_pos()
-                
-                # calculate slope components
-                slope_x = (mouse_x - self.axis_points[point][0]) / self.grid_cols
-                slope_y = (mouse_y - self.axis_points[point][1]) / self.grid_cols
-                
-                # translate the grid point coordinates depending on the zoom scale
-                self.axis_points[point][0] += (slope_x * self.zoom_scale)
-                self.axis_points[point][1] += (slope_y * self.zoom_scale)
+            # if point is not 0 or point is not 4:
+            # calculate slope components
+            slope_x = (mouse_x - self.axis_points[point][0]) / self.grid_cols
+            slope_y = (mouse_y - self.axis_points[point][1]) / self.grid_cols
+            
+            # translate the grid point coordinates depending on the zoom scale
+            self.axis_points[point][0] += (slope_x * self.zoom_scale)
+            self.axis_points[point][1] += (slope_y * self.zoom_scale)
+            
+        # update the projected center point
+        self.proj_center_p[0, 0] = self.axis_points[0][0]
+        self.proj_center_p[1, 0] = self.axis_points[0][1]
                 
     def get_point_at_XYZcoord(self, coord):
         # Uses the concept of ratios. If you think the distance from |---| is 10cm but i represent that distance as |-------| which is 100 cm
@@ -132,8 +136,8 @@ class Coordinate_grid():
         # to create a 3D feel, we must calculate the values to offset the X and Y's by
         #   * the scaling concept is still in use, but we are working with Z distances
         #   * to do this we need the distance (in pixels) between two points that look like they are in 3D: center and z_axis endpoint
-        x_dis_z_to_cent = self.get_z_endpoint()[0, 0] - self.proj_center_p[0, 0]
-        y_dis_z_to_cent = self.get_z_endpoint()[0, 1] - self.proj_center_p[1, 0]
+        x_dis_z_to_cent = self.axis_points[1][0] - self.proj_center_p[0, 0]
+        y_dis_z_to_cent = self.axis_points[1][1] - self.proj_center_p[1, 0]
         #   * the distance between the center and Z endpoint is half the axis length. We need grid box distances for our calculation as we did for the x and y
         x_dis_z = x_dis_z_to_cent / (self.grid_cols / 2)
         y_dis_z = y_dis_z_to_cent / (self.grid_cols / 2)
@@ -157,12 +161,13 @@ class Coordinate_grid():
         nxy_p = [self.ws_edge_points[3][0], self.ws_edge_points[3][1]]    # (-x, y)
         xny_p = [self.ws_edge_points[1][0], self.ws_edge_points[1][1]]    # (x, -y)
         
-        xy_to_nxy_dist_x = abs(xy_p[0] - nxy_p[0])  # distances
-        xy_to_nxy_dist_y = abs(xy_p[1] - nxy_p[1])
+        xy_to_nxy_dist_x = abs(xy_p[0] - nxy_p[0]) + 0.1  # distances. Adding 0.1 prevents the distances from getting too small. Small distance = small grid gap = huge x or y coord list = lots of RAM = app crash
+        xy_to_nxy_dist_y = abs(xy_p[1] - nxy_p[1]) + 0.1
         
         # calculate the grid gap of each axis
         x_grid_gap = (xy_to_nxy_dist_x / x_grid_boxes)
         y_grid_gap = (xy_to_nxy_dist_y / y_grid_boxes)
+        
         
         xy_to_nxy_slope_x = xy_p[0] - nxy_p[0]
         xy_to_nxy_slope_y = xy_p[1] - nxy_p[1]
