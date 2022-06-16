@@ -10,7 +10,7 @@ from math import *
 from math import pi
 
 class Coordinate_grid():
-    def __init__(self, screen, pixel_axis_length=200, perceived_axis_length=400, grid_rows=10, grid_columns=10, zoom=False):
+    def __init__(self, screen, pixel_axis_length=200, perceived_axis_length=400, grid_rows=10, grid_columns=10, zoom=False, ws_plane=False, grid_points=False):
         self.scrn = screen
     
         # used to project 3D points (x, y, z) to 2D points (x, y)
@@ -23,8 +23,11 @@ class Coordinate_grid():
         self.proj_center_p = []
         self.grid = []
         
+        # grid settings
         self.zoom_scale = 0
         self.can_zoom = zoom
+        self.show_ws_plane = ws_plane
+        self.show_grid_points = grid_points
     
         self.axis_len = perceived_axis_length    # perceived length of the axes in centimeters
         self.grid_rows = grid_rows
@@ -38,6 +41,11 @@ class Coordinate_grid():
         self.V_Z =      np.zeros((3, 1))
         self.V_Y =      np.zeros((3, 1))
         self.V_X =      np.zeros((3, 1))
+        
+        # rotation matrices
+        self.z_rotation = np.zeros((3, 3))
+        self.y_rotation = np.zeros((3, 3))
+        self.x_rotation = np.zeros((3, 3))
         
         self.LZ =       pixel_axis_length  # length from z axis endpoint to center point
         self.LY =       pixel_axis_length
@@ -57,7 +65,7 @@ class Coordinate_grid():
             self.proj_center_p = np.matrix(center).reshape((3, 1))
         
         # display the coordinate grid
-        self.show_grid(show_grid_points=True)
+        self.show_grid()
         
         for event in events:
             if event.type == pyg.KEYDOWN:
@@ -92,6 +100,9 @@ class Coordinate_grid():
             slope_y = (mouse_y - self.axis_points[point][1]) / self.grid_cols
             
             # translate the grid point coordinates depending on the zoom scale
+            #   * this is also the reason for grid translation relative to the mouse
+            #   * when zoom scale is not 0, the grid follows the mouse because the code below
+            #   * sets the grid center to a point relative to the position of the mouse
             self.axis_points[point][0] += (slope_x * self.zoom_scale)
             self.axis_points[point][1] += (slope_y * self.zoom_scale)
             
@@ -220,7 +231,7 @@ class Coordinate_grid():
                 if draw:
                     pyg.draw.circle(self.scrn, (25, 25, 25), (self.grid[row, col]), 1)
                           
-    def show_grid(self, show_grid_points=False): 
+    def show_grid(self): 
         # create axis endpoints
         points = []
         
@@ -259,7 +270,7 @@ class Coordinate_grid():
         self.ws_edge_points[3][0] = self.axis_points[7][0] + (self.axis_points[0][0] - self.axis_points[6][0])
         self.ws_edge_points[3][1] = self.axis_points[7][1] + (self.axis_points[0][1] - self.axis_points[6][1])   
            
-        # draw axes lines 
+        # draw axes lines
         self.connect_axis_points(0, 1, (0, 0, 255)) # draws z axis
         self.connect_axis_points(0, 2, (0, 255, 0)) #       y
         self.connect_axis_points(0, 3, (255, 0, 0)) #       x
@@ -272,15 +283,16 @@ class Coordinate_grid():
         
         # draw points to indicate the first octant of the workspace
         pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[1]), 3)    # z
-        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[2]), 3)    # y  
+        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[2]), 3)    # y
         pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[3]), 3)    # x
         
         # draw workspace plane
-        pyg_gfx.filled_polygon(self.scrn, [(x, y) for x, y in self.ws_edge_points], (0, 0, 0, 50))
+        if self.show_ws_plane:
+            pyg_gfx.filled_polygon(self.scrn, [(x, y) for x, y in self.ws_edge_points], (0, 0, 0, 50))
         
         # update the grid points
-        if show_grid_points:
-            self.update_grid_points(show_grid_points)
+        if self.show_grid_points:
+            self.update_grid_points(self.show_grid_points)
         else:
             self.update_grid_points()
     
