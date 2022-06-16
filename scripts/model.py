@@ -17,20 +17,22 @@ ang = 0
 def handle_workspace(ws, center_point ,events, ws2, ws3, ws4):
     global ang
     
-    # run the workspace
+    # # run the workspace
     ws.run(None, center_point, events)
     
-    ws2.run(ws, [100, 100, 100], events)
+    ws2.run(ws, [20, 20, 100], events)
     
-    ws3.run(ws, [50, 50, 50], events)
+    # ws3.run(ws2, [0, 0, 30], events)
     
-    ws4.run(ws, [50, 50, -50], events) 
+    # ws4.run(ws, [0, 0, 70], events)
     
-    ang += 0.01
+    # create a workspace 
+    
+    # ang += 0.01
     
     pyg.draw.line(ws.scrn, (234, 24, 242), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws2.get_point_at_XYZcoord([0, 0, 0])), width=5)
-    pyg.draw.line(ws.scrn, (30, 223, 34), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws3.get_point_at_XYZcoord([0, 0, 0])), width=5)
-    pyg.draw.line(ws.scrn, (23, 43, 123), (ws.get_point_at_XYZcoord([0, 0, 0])), (ws4.get_point_at_XYZcoord([0, 0, 0])), width=5)
+    # pyg.draw.line(ws.scrn, (30, 223, 34), (ws2.get_point_at_XYZcoord([0, 0, 0])), (ws3.get_point_at_XYZcoord([0, 0, 0])), width=5)
+    # pyg.draw.line(ws.scrn, (23, 43, 123), (ws3.get_point_at_XYZcoord([0, 0, 0])), (ws4.get_point_at_XYZcoord([0, 0, 0])), width=5)
     
 # def handle_join_grid(j0_ws, center_point, events):
 #     j0_ws.run(center_point, events)
@@ -83,7 +85,7 @@ if __name__ == "__main__":
                     title_col_span=[2, 17], title_row_span=[1, 3], menu_title="Joint Viz")
     
     # create workspace
-    workspace = Coordinate_grid(screen, pixel_axis_length=400, perceived_axis_length=200, grid_rows=10, grid_columns=10)
+    workspace = Coordinate_grid(screen, pixel_axis_length=400, perceived_axis_length=200, grid_rows=10, grid_columns=10, zoom=True)
     
     joint_ws = Coordinate_grid(screen, pixel_axis_length=80, perceived_axis_length=40, grid_rows=4, grid_columns=4)
     joint_ws2 = Coordinate_grid(screen, pixel_axis_length=80, perceived_axis_length=40, grid_rows=4, grid_columns=4)

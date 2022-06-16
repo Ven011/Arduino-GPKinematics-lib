@@ -10,7 +10,7 @@ from math import *
 from math import pi
 
 class Coordinate_grid():
-    def __init__(self, screen, pixel_axis_length = 200, perceived_axis_length = 400, grid_rows = 10, grid_columns = 10):
+    def __init__(self, screen, pixel_axis_length=200, perceived_axis_length=400, grid_rows=10, grid_columns=10, zoom=False):
         self.scrn = screen
     
         # used to project 3D points (x, y, z) to 2D points (x, y)
@@ -22,6 +22,9 @@ class Coordinate_grid():
         
         self.proj_center_p = []
         self.grid = []
+        
+        self.zoom_scale = 0
+        self.can_zoom = zoom
     
         self.axis_len = perceived_axis_length    # perceived length of the axes in centimeters
         self.grid_rows = grid_rows
@@ -30,15 +33,6 @@ class Coordinate_grid():
         self.theta =    0   # x angle of the center point
         self.alpha =    0   # y angle of the center point
         self.sigma =    0   # z axis angle of the center point
-        
-        self.theta_z =  0
-        self.alpha_z =  0
-        
-        self.sigma_y =  0
-        self.theta_y =  0
-        
-        self.alpha_x =  0
-        self.sigma_x =  0
         
         # Displacement vectors
         self.V_Z =      np.zeros((3, 1))
@@ -67,67 +61,88 @@ class Coordinate_grid():
         
         for event in events:
             if event.type == pyg.KEYDOWN:
-                if event.key == pyg.K_w:
-                    self.theta_z += 0.01
-                if event.key == pyg.K_x:
-                    self.theta_z -= 0.01
-                if event.key == pyg.K_a:
-                    self.alpha_z += 0.01
-                if event.key == pyg.K_d:
-                    self.alpha_z -= 0.01
-                    
-                if event.key == pyg.K_t:
-                    self.theta_y += 0.01
-                if event.key == pyg.K_v:
-                    self.theta_y -= 0.01
-                if event.key == pyg.K_f:
-                    self.sigma_y += 0.01
-                if event.key == pyg.K_h:
-                    self.sigma_y -= 0.01
-                    
-                if event.key == pyg.K_i:
-                    self.alpha_x += 0.01
-                if event.key == pyg.K_m:
-                    self.alpha_x -= 0.01
-                if event.key == pyg.K_l:
-                    self.sigma_x += 0.01
-                if event.key == pyg.K_j:
-                    self.sigma_x -= 0.01
+                if event.key == pyg.K_COMMA:
+                    self.sigma += 0.01
+                if event.key == pyg.K_PERIOD:
+                    self.sigma -= 0.01
+                if event.key == pyg.K_UP:
+                    self.theta += 0.01
+                if event.key == pyg.K_DOWN:
+                    self.theta -= 0.01
+                if event.key == pyg.K_LEFT:
+                    self.alpha += 0.01
+                if event.key == pyg.K_RIGHT:
+                    self.alpha -= 0.01
+            if event.type == pyg.MOUSEWHEEL:
+                self.zoom_scale += event.y
+    
+    def zoom(self):
+        # zoom works by finding the x(y-y1) and y(x-x1) components of the slope (m = y-y1/x-x1) from a point of the workspace edge points
+        # to the x and y coordinate of the mouse cursor / zoom center. As we zoom in, add the slope components to the ws edge points,
+        # as we zoom out, subtract the slope components from the ws grid points
         
+        # iterate thought each ws edge point
+        for point in range(len(self.axis_points)):
+            if point is not 0 or point is not 4:
+                # get mouse x and y
+                mouse_x, mouse_y = self.proj_center_p[0, 0], self.proj_center_p[1, 0] # pyg.mouse.get_pos()
+                
+                # calculate slope components
+                slope_x = (mouse_x - self.axis_points[point][0]) / self.grid_cols
+                slope_y = (mouse_y - self.axis_points[point][1]) / self.grid_cols
+                
+                # translate the grid point coordinates depending on the zoom scale
+                self.axis_points[point][0] += (slope_x * self.zoom_scale)
+                self.axis_points[point][1] += (slope_y * self.zoom_scale)
+                
     def get_point_at_XYZcoord(self, coord):
         # Uses the concept of ratios. If you think the distance from |---| is 10cm but i represent that distance as |-------| which is 100 cm
-        # then point (10, 0) to you is point (100, 0) to me. Using this ratio I can know what you mean by 5cm -> 50cm
+        # then point (10, 0) to you is point (100, 0) to me. Using this ratio I can know what you mean by 5cm -> 50cm.
         
-        # get the center point of the coordinate grid
-        x = self.grid[(self.grid_rows//2), (self.grid_cols//2), 0]
-        y = self.grid[(self.grid_rows//2), (self.grid_cols//2), 1]
+        # get the coordinate of the center point/origin on the grid
+        x_c = self.grid[(self.grid_rows//2), (self.grid_cols//2), 0]
+        y_c = self.grid[(self.grid_rows//2), (self.grid_cols//2), 1]
         
-        # get the point immediately diagnal to the center point in the first quadrant
-        x_n = self.grid[(self.grid_rows//2) - 1, (self.grid_cols//2) - 1, 0]
-        y_n = self.grid[(self.grid_rows//2) - 1, (self.grid_cols//2) - 1, 1]
+        # get the coordinate of the nearest positive x-axis point to the center on the grid
+        x_x = self.grid[(self.grid_rows//2), (self.grid_cols//2) - 1, 0]
+        y_x = self.grid[(self.grid_rows//2), (self.grid_cols//2) - 1, 1]
         
-        # find the y distance from the center y to the diagnal point y
-        y_dis = y_n - y
-        # same for x
-        x_dis = x_n - x
+        # get the coordinate of the nearest positive y-axis point to the center on the grid
+        x_y = self.grid[(self.grid_rows//2) - 1, (self.grid_cols//2), 0]
+        y_y = self.grid[(self.grid_rows//2) - 1, (self.grid_cols//2), 1]
         
-        # determine the perceived grid box length
+        # find the pixel distance between the components of the x-axis point and the components of the center
+        x_dis_x_to_cent = x_x - x_c
+        y_dis_x_to_cent = y_x - y_c
+        # do the same thing for the y-axis point
+        x_dis_y_to_cent = x_y - x_c
+        y_dis_y_to_cent = y_y - y_c
+        
+        # determine the perceived grid box length/ the length of a unit box on the grid
         per_gb_len = self.axis_len / self.grid_cols
         
+        # calculate the values to offset the X and Y by to get to the argued point's x position
+        xx_offset = (x_dis_x_to_cent * coord[0]) / per_gb_len
+        xy_offset = (y_dis_x_to_cent * coord[0]) / per_gb_len
+        
+        # calculate the values to offset the X and Y by to get to the argued point's y position
+        yx_offset = (x_dis_y_to_cent * coord[1]) / per_gb_len
+        yy_offset = (y_dis_y_to_cent * coord[1]) / per_gb_len
+        
         # to create a 3D feel, we must calculate the values to offset the X and Y's by
-        #   * the scaling concept is still in use, but we are working with Z axis distances
+        #   * the scaling concept is still in use, but we are working with Z distances
         #   * to do this we need the distance (in pixels) between two points that look like they are in 3D: center and z_axis endpoint
         x_dis_z_to_cent = self.get_z_endpoint()[0, 0] - self.proj_center_p[0, 0]
         y_dis_z_to_cent = self.get_z_endpoint()[0, 1] - self.proj_center_p[1, 0]
-        #   * the distance between the center and Z endpoint is half the axis length. We need grid box distances for our calculation as we did for the x and y in the first quadrant.
+        #   * the distance between the center and Z endpoint is half the axis length. We need grid box distances for our calculation as we did for the x and y
         x_dis_z = x_dis_z_to_cent / (self.grid_cols / 2)
         y_dis_z = y_dis_z_to_cent / (self.grid_cols / 2)
         #   * calculate the offsets
-        x_offset = ((x_dis_z * coord[2]) / per_gb_len)
-        y_offset = ((y_dis_z * coord[2]) / per_gb_len)
+        xz_offset = (x_dis_z * coord[2]) / per_gb_len
+        yz_offset = (y_dis_z * coord[2]) / per_gb_len
         
         # calculate the point
-        point = [x + ((x_dis * coord[0]) / per_gb_len) + x_offset, y + ((y_dis * coord[1]) / per_gb_len) + y_offset]
+        point = [x_c + xx_offset + yx_offset + xz_offset, y_c + xy_offset + yy_offset + yz_offset]
         
         return point
         
@@ -199,7 +214,7 @@ class Coordinate_grid():
                 self.grid[row, col, 1] = y_coords[col] - (xy_to_xny_slope_y / y_grid_boxes * row)
                 if draw:
                     pyg.draw.circle(self.scrn, (25, 25, 25), (self.grid[row, col]), 1)
-        
+                          
     def show_grid(self, show_grid_points=False): 
         # create axis endpoints
         points = []
@@ -221,6 +236,10 @@ class Coordinate_grid():
             self.axis_points[i + 4] = [(self.proj_center_p[0, 0]) - (x - (self.proj_center_p[0, 0])), (self.proj_center_p[1, 0]) - (y - (self.proj_center_p[1, 0]))]
             i += 1
             
+        # zoom works by translating the axis points
+        if self.can_zoom:
+            self.zoom()
+            
         # calculate workspace plane points. Used the concepts of parallel lines and distance
         # x,y point
         self.ws_edge_points[0][0] = self.axis_points[2][0] - (self.axis_points[0][0] - self.axis_points[3][0])    # x
@@ -233,23 +252,23 @@ class Coordinate_grid():
         self.ws_edge_points[1][1] = self.axis_points[3][1] + (self.axis_points[0][1] - self.axis_points[2][1])
         # -x,y
         self.ws_edge_points[3][0] = self.axis_points[7][0] + (self.axis_points[0][0] - self.axis_points[6][0])
-        self.ws_edge_points[3][1] = self.axis_points[7][1] + (self.axis_points[0][1] - self.axis_points[6][1])
+        self.ws_edge_points[3][1] = self.axis_points[7][1] + (self.axis_points[0][1] - self.axis_points[6][1])   
            
         # draw axes lines 
         self.connect_axis_points(0, 1, (0, 0, 255)) # draws z axis
         self.connect_axis_points(0, 2, (0, 255, 0)) #       y
         self.connect_axis_points(0, 3, (255, 0, 0)) #       x
-        self.connect_axis_points(0, 5, (0, 0, 255)) # draws neg z axis
-        self.connect_axis_points(0, 6, (0, 255, 0)) #           y
-        self.connect_axis_points(0, 7, (255, 0, 0)) #           x
+        # self.connect_axis_points(0, 5, (0, 0, 255)) # draws neg z axis
+        # self.connect_axis_points(0, 6, (0, 255, 0)) #           y
+        # self.connect_axis_points(0, 7, (255, 0, 0)) #           x
         
         # draw origin point
         pyg.draw.circle(self.scrn, (255, 23, 241), ([self.proj_center_p[0, 0], self.proj_center_p[1, 0]]), 4)
         
         # draw points to indicate the first octant of the workspace
-        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[1]), 3)
-        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[2]), 3)
-        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[3]), 3)
+        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[1]), 3)    # z
+        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[2]), 3)    # y  
+        pyg.draw.circle(self.scrn, (0, 0, 0), tuple(self.axis_points[3]), 3)    # x
         
         # draw workspace plane
         pyg_gfx.filled_polygon(self.scrn, [(x, y) for x, y in self.ws_edge_points], (0, 0, 0, 50))
@@ -277,19 +296,19 @@ class Coordinate_grid():
 
     def calc_DVs(self):
         # calculate the displacement vector for the Z axis endpoint
-        self.V_Z[0, 0] = self.LZ * sin(self.alpha_z)                        # x
-        self.V_Z[1, 0] = self.LZ * -sin(self.theta_z)                       # y
-        self.V_Z[2, 0] = self.LZ * cos(self.alpha_z) * cos(self.theta_z)    # z
+        self.V_Z[0, 0] = self.LZ * sin(self.alpha)                      # x - theta - cos(a)
+        self.V_Z[1, 0] = self.LZ * -sin(self.theta)                     # y
+        self.V_Z[2, 0] = self.LZ * cos(self.alpha) * cos(self.theta)    # z
         
         # calculate the displacement vector for the Y axis endpoint
-        self.V_Y[0, 0] = self.LY * -sin(self.sigma_y)
-        self.V_Y[1, 0] = self.LY * cos(self.sigma_y) * cos(self.theta_y)
-        self.V_Y[2, 0] = self.LY * sin(self.theta_y) 
+        self.V_Y[0, 0] = self.LY * -sin(self.sigma)
+        self.V_Y[1, 0] = self.LY * cos(self.sigma) * cos(self.theta)    
+        self.V_Y[2, 0] = self.LY * sin(self.theta) 
         
         # calculate the displacement vector for the X axis endpoint
-        self.V_X[0, 0] = self.LX * cos(self.alpha_x) * cos(self.sigma_x)
-        self.V_X[1, 0] = self.LX * sin(self.sigma_x)
-        self.V_X[2, 0] = self.LX * -sin(self.alpha_x)
+        self.V_X[0, 0] = self.LX * cos(self.alpha) * cos(self.sigma)
+        self.V_X[1, 0] = self.LX * sin(self.sigma)
+        self.V_X[2, 0] = self.LX * -sin(self.alpha)
         
 class Grid():
     def __init__(self, grid_rows, grid_columns):
